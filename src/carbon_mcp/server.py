@@ -5,10 +5,23 @@ from __future__ import annotations
 import os
 
 from fastmcp import FastMCP
+from fastmcp.server.auth.providers.jwt import JWTVerifier  # JSON Web Token
 
 from carbon_mcp.carbon_client import CarbonClient
 
-mcp = FastMCP(name="carbon-aware-mcp")
+# load env
+public_key = os.environ["CARBON_MCP_PUBLIC_KEY"].replace("\\n", "\n")  # fail fast if not set
+
+ISSUER, AUDIENCE = "http://carbon-aware-mcp", "carbon-aware-mcp"
+
+auth = JWTVerifier(
+    public_key=public_key,
+    issuer=ISSUER,
+    audience=AUDIENCE,
+    required_scopes={"read"},
+)
+
+mcp = FastMCP(name="carbon-aware-mcp", auth=auth)
 
 @mcp.tool
 async def current_intensity() -> dict:
