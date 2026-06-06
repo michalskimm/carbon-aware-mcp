@@ -16,6 +16,49 @@ async def current_intensity() -> dict:
     async with CarbonClient() as client:
         return await client.current_intensity()
     
+@mcp.tool
+async def forecast(hours: int = 24) -> list[dict]:
+    """Half-hourly carbon-intensity forecast for the next 'hours' hours (1-48)."""
+    async with CarbonClient() as client:
+        return await client.forecast(hours)
+    
+@mcp.tool
+async def generation_mix() -> dict:
+    """Current gen mix by fuel type, as %s of total."""
+    async with CarbonClient() as client:
+        return await client.generation_mix()
+    
+@mcp.tool
+async def greenest_window(duration_hours: int, within_hours: int = 24) -> dict:
+    """Find the lowest-average-carbon continous window of 'duration_hours' starting within the next 'within_hours'. 
+    Use this to schedule workload.
+    
+    Returns the chosen windows start/end and its mean forecast intensity.
+    """
+    if duration_hours < 1:
+        raise ValueError("duration_hours must be >= 1")
+    async with CarbonClient() as client:
+        slots = await client.forecast(within_hours)
+
+    width = duration_hours * 2  # 30-min slots
+    if width > len(slots):
+        raise ValueError("duration_hours exceed available forecast horizon")
+    
+    best_start, best_avg = 0, float("inf")
+    for i in range(len(slots) - width + 1):
+        window = slots[i : i + width]
+        avg = sum(s["forecast_gco2_per_kwh"] for s in window) / width
+        if avg < best_avg:
+            best_start, best_avg = i, avg
+
+    chosen = slots[best_start : best_start + width]
+    return {
+        "start": chosen[0]["from"],
+        "end": chosen[-1]["to"],
+        "mean_forecast_gco2_per_kwh": round(best_avg, 1),
+        "duration_hours": duration_hours,
+    }
+    
 def main() -> None:
     port = int(os.getenv("PORT", "8000"))
     mcp.run(transport="http", host="0.0.0.0", port=port)
