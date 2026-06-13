@@ -7,10 +7,14 @@ import os
 from fastmcp import FastMCP
 from fastmcp.server.auth.providers.jwt import JWTVerifier  # JSON Web Token
 
+from carbon_mcp.observability import ObservabilityMiddleware, configure_observability
+
 from carbon_mcp.carbon_client import CarbonClient
 
 # load env
 public_key = os.environ["CARBON_MCP_PUBLIC_KEY"].replace("\\n", "\n")  # fail fast if not set
+
+configure_observability()  # set up logging + tracing before anything else
 
 ISSUER, AUDIENCE = "http://carbon-aware-mcp", "carbon-aware-mcp"
 
@@ -21,7 +25,7 @@ auth = JWTVerifier(
     required_scopes={"read"},
 )
 
-mcp = FastMCP(name="carbon-aware-mcp", auth=auth)
+mcp = FastMCP(name="carbon-aware-mcp", auth=auth, middleware=[ObservabilityMiddleware()])
 
 @mcp.tool
 async def current_intensity() -> dict:
