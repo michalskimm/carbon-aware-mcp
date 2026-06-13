@@ -8,7 +8,6 @@ BASE = "https://api.carbonintensity.org.uk"
 
 @respx.mock
 async def test_current_intensity_parses() -> None:
-    # arrange: inercept the GET and return JSON we control
     respx.get(f"{BASE}/intensity").respond(
         json={
             "data": [

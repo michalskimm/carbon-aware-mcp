@@ -11,7 +11,6 @@ from carbon_mcp.observability import ObservabilityMiddleware, configure_observab
 
 from carbon_mcp.carbon_client import CarbonClient
 
-# load env
 public_key = os.environ["CARBON_MCP_PUBLIC_KEY"].replace("\\n", "\n")  # fail fast if not set
 
 configure_observability()  # set up logging + tracing before anything else

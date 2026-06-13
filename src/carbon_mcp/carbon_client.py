@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-import httpx  # httpx is a modern async HTTP client for Python
+import httpx
 
 BASE_URL = "https://api.carbonintensity.org.uk"
 
@@ -17,19 +17,16 @@ class CarbonClient:
     def __init__(self, base_url: str = BASE_URL, timeout: float = 10.0) -> None:
         self._client = httpx.AsyncClient(base_url=base_url, timeout=timeout)
 
-    # Context manager support for automatic cleanup
     async def __aenter__(self) -> CarbonClient:
         return self
     
-    # Ensure the HTTP client is properly closed when done
     async def __aexit__(self, *exc: object) -> None:
         await self._client.aclose()
 
-    # Internal helper to GET and parse JSON, with error handling
     async def _get(self, path: str) -> dict:
         resp = await self._client.get(path)
-        resp.raise_for_status()  # turn HTTP 4xx/5xx into an exception
-        return resp.json()  # Return the parsed JSON response
+        resp.raise_for_status() 
+        return resp.json()
     
     async def current_intensity(self) -> dict:
         """Latest national carbon intensity (gCO2/kWh) and index band."""
