@@ -2,15 +2,16 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import httpx
 
 BASE_URL = "https://api.carbonintensity.org.uk"
 
+
 class CarbonClient:
     """Async wrapper around the Carbon Intensity API.
-    
+
     Holds one httpx.AsyncClient for connection reuse. Caller owns the lifecycle via 'async with'.
     """
 
@@ -19,15 +20,15 @@ class CarbonClient:
 
     async def __aenter__(self) -> CarbonClient:
         return self
-    
+
     async def __aexit__(self, *exc: object) -> None:
         await self._client.aclose()
 
     async def _get(self, path: str) -> dict:
         resp = await self._client.get(path)
-        resp.raise_for_status() 
+        resp.raise_for_status()
         return resp.json()
-    
+
     async def current_intensity(self) -> dict:
         """Latest national carbon intensity (gCO2/kWh) and index band."""
         block = (await self._get("/intensity"))["data"][0]
@@ -39,11 +40,11 @@ class CarbonClient:
             "actual_gco2_per_kwh": i.get("actual"),  # may be null - .get
             "index": i["index"],
         }
-    
+
     async def forecast(self, hours: int = 24) -> list[dict]:
         """Half-hourly forecast for the next 'hours' hours (max 48)."""
         hours = max(1, min(hours, 48))
-        now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%MZ")
+        now = datetime.now(UTC).strftime("%Y-%m-%dT%H:%MZ")
         data = (await self._get(f"/intensity/{now}/fw48h"))["data"]
         slots = data[: hours * 2]  # 30-min resolution -> 2 slots per hour
         return [
@@ -55,7 +56,7 @@ class CarbonClient:
             }
             for b in slots
         ]
-    
+
     async def generation_mix(self) -> dict:
         """Current generation mix by fuel (% of total)."""
         block = (await self._get("/generation"))["data"]

@@ -6,6 +6,7 @@ from carbon_mcp.carbon_client import CarbonClient
 
 BASE = "https://api.carbonintensity.org.uk"
 
+
 @respx.mock
 async def test_current_intensity_parses() -> None:
     respx.get(f"{BASE}/intensity").respond(
@@ -14,7 +15,7 @@ async def test_current_intensity_parses() -> None:
                 {
                     "from": "2026-01-01T00:00Z",
                     "to": "2026-01-01T00:30Z",
-                    "intensity": {"forecast": 120, "actual": 115, "index": "moderate"}
+                    "intensity": {"forecast": 120, "actual": 115, "index": "moderate"},
                 }
             ]
         }
@@ -25,9 +26,10 @@ async def test_current_intensity_parses() -> None:
         out = await client.current_intensity()
 
     # assert: the shape MY code produces, not API's raw shape
-    assert out['forecast_gco2_per_kwh'] == 120
-    assert out['actual_gco2_per_kwh'] == 115
-    assert out['index'] == "moderate"
+    assert out["forecast_gco2_per_kwh"] == 120
+    assert out["actual_gco2_per_kwh"] == 115
+    assert out["index"] == "moderate"
+
 
 @respx.mock
 async def test_current_intensity_handles_null_actual() -> None:
@@ -37,7 +39,7 @@ async def test_current_intensity_handles_null_actual() -> None:
                 {
                     "from": "2026-01-01T00:00Z",
                     "to": "2026-01-01T00:30Z",
-                    "intensity": {"forecast": 90, "actual": None, "index": "low"}
+                    "intensity": {"forecast": 90, "actual": None, "index": "low"},
                 }
             ]
         }
@@ -45,7 +47,4 @@ async def test_current_intensity_handles_null_actual() -> None:
     async with CarbonClient() as client:
         out = await client.current_intensity()
 
-    assert out["actual_gco2_per_kwh"] is None # the bug .get() prevents
-
-
-
+    assert out["actual_gco2_per_kwh"] is None  # the bug .get() prevents
