@@ -6,6 +6,8 @@ import os
 
 from fastmcp import FastMCP
 from fastmcp.server.auth.providers.jwt import JWTVerifier  # JSON Web Token
+from starlette.requests import Request
+from starlette.responses import HTMLResponse
 
 from carbon_mcp.carbon_client import CarbonClient
 from carbon_mcp.observability import ObservabilityMiddleware, configure_observability
@@ -77,6 +79,34 @@ async def greenest_window(duration_hours: int, within_hours: int = 24) -> dict:
         "mean_forecast_gco2_per_kwh": round(best_avg, 1),
         "duration_hours": duration_hours,
     }
+
+
+@mcp.custom_route("/", methods=["GET"])
+async def landing(request: Request) -> HTMLResponse:
+    """Human-friendly landing page so the base URL isn't a bare 405."""
+    return HTMLResponse(
+        """<!doctype html>
+<html><head><meta charset="utf-8"><title>carbon-aware-mcp</title>
+<style>
+  body{font-family:system-ui,-apple-system,sans-serif;max-width:42rem;margin:4rem auto;
+       padding:0 1.5rem;line-height:1.6;color:#2c2c2a}
+  code{background:#f1efe8;padding:.15rem .4rem;border-radius:4px}
+  a{color:#0f6e56}
+  .tag{color:#5f5e5a;font-size:.9rem}
+</style></head>
+<body>
+  <h1>carbon-aware-mcp <span class="tag">v0.1.0</span></h1>
+  <p>A remote <a href="https://modelcontextprotocol.io">MCP</a> server exposing live UK
+  grid carbon-intensity tools, so an LLM agent can schedule workloads when the grid is
+  cleanest.</p>
+  <p><strong>Status:</strong> live ✓ &nbsp;·&nbsp; <strong>MCP endpoint:</strong>
+  <code>/mcp</code> (JWT-authenticated, POST-only — not browseable)</p>
+  <p>Tools: <code>current_intensity</code>, <code>forecast</code>,
+  <code>generation_mix</code>, <code>greenest_window</code>.</p>
+  <p class="tag">Source &amp; docs:
+  <a href="https://github.com/michalskimm/carbon-aware-mcp">github.com/michalskimm/carbon-aware-mcp</a></p>
+</body></html>"""
+    )
 
 
 def main() -> None:
