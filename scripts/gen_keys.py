@@ -9,7 +9,10 @@ token = kp.create_token(
     issuer=ISSUER,
     audience=AUDIENCE,
     scopes=["read"],
-    expires_in_seconds=60 * 60 * 24 * 30,
+    expires_in_seconds=60 * 60 * 24 * 365,  # 365-day demo token
 )
-print("=== PUBLIC KEY (set as CARBON_MCP_PU configure MCP) ===\n" + kp.public_key)
-print("\n=== CLIENT TOKEN (do NOT commit) ===\n" + token)
+print("=== PUBLIC KEY (set as CARBON_MCP_PUBLIC_KEY) ===\n" + kp.public_key)
+print("\n=== CLIENT TOKEN (do NOT commit; expires in 365 days) ===\n" + token)
+escaped = kp.public_key.replace("\n", "\\n")
+print("\n=== PUBLIC KEY — escaped, paste into CARBON_MCP_PUBLIC_KEY ===")
+print(escaped)
