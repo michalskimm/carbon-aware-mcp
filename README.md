@@ -1,5 +1,5 @@
 # carbon-aware-mcp
-v0.1.0
+v0.1.1
 
 A remote [MCP](https://modelcontextprotocol.io) server exposing live UK grid
 carbon-intensity tools, so an LLM agent can schedule workloads when the grid is cleanest.
@@ -14,10 +14,16 @@ contiguous window; three helper tools wrap the UK Carbon Intensity API for live 
 ## Tools
 | Tool | Purpose |
 |------|---------|
-| `greenest_window` | Lowest-carbon contiguous window for a job of duration D, starting within N hours |
+| `greenest_window` | Lowest-carbon contiguous window for a job of duration D (whole hours), starting within N hours (default 48) |
 | `current_intensity` | Latest national gCO2/kWh + index band |
-| `forecast` | Half-hourly forecast, next N hours |
+| `forecast` | Half-hourly forecast, next N hours (1–48; clamped to 48) |
 | `generation_mix` | Current generation mix by fuel type |
+
+**Limits (verified, not assumed — see Decision log):** the upstream UK Carbon Intensity
+API forecasts 48h ahead at 30-minute resolution. `forecast` clamps any request to 48h.
+`greenest_window` searches within `within_hours` (default 48, matching the horizon) and
+raises `ValueError` only when `duration_hours` exceeds the 48h forecast — i.e. when the job
+is genuinely longer than the available data.
 
 ## Architecture
 ![Architecture diagram](docs/carbon-aware-mcp-architecture.svg)
@@ -36,6 +42,7 @@ uv run python scripts/gen_keys.py          # generate keypair + token
 uv run carbon-mcp                           # local server
 uv run python scripts/smoke.py              # local smoke test
 MCP_URL=<cloud-url>/mcp uv run python scripts/smoke.py   # against the deployed server
+uv run python scripts/probe_api_limits.py   # characterize upstream limits (manual, not CI)
 ```
 
 ## Decision log
@@ -55,6 +62,19 @@ MCP_URL=<cloud-url>/mcp uv run python scripts/smoke.py   # against the deployed 
 - **Azure Container Apps, scale-to-zero** — serverless, scales to zero (capped at max 1
   for this POC) so idle cost is $0. The same container runs anywhere; chose Container Apps
   for managed HTTPS, ingress, and source-to-deploy.
+- **API limits read from source, then verified against the live upstream** — the forecast
+  horizon (48h, 30-min resolution) is a hard clamp in `carbon_client.forecast`
+  (`min(hours, 48)`, upstream `fw48h` endpoint), and `greenest_window` takes whole
+  `duration_hours`, raising when the job exceeds its `within_hours` search window.
+  `scripts/probe_api_limits.py` confirms the upstream matches these assumptions rather than
+  discovering unknowns — run by hand, not in CI (it hits the live API and has no pass/fail).
+  *Verified 2026-06-24:* slot counts matched expectations at every horizon (72h/96h both
+  clamp to 96 slots = 48h); `greenest_window` raised exactly at `duration_hours > within_hours`.
+  The probe surfaced that the default `within_hours` (originally 24) didn't match the 48h data
+  horizon — a 30h job raised even though the data existed. Fixed by defaulting `within_hours`
+  to 48 so the tool answers whenever the forecast supports it; the `ValueError` is now reserved
+  for jobs that genuinely exceed the 48h horizon. Eval `limits-*` rubrics encode these
+  confirmed boundaries.
 
 ## Scaling notes
 Not built in v0.1 — what production would need:

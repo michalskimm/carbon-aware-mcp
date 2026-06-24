@@ -1,6 +1,6 @@
 [project]
 name = "carbon-aware-mcp"
-version = "0.1.0"
+version = "0.1.1"
 description = "MCP server exposing UK grid carbon-intensity tools for scheduling agents."
 readme = "README.md"
 requires-python = ">=3.12"

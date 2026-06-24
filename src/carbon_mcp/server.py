@@ -50,7 +50,7 @@ async def generation_mix() -> dict:
 
 
 @mcp.tool
-async def greenest_window(duration_hours: int, within_hours: int = 24) -> dict:
+async def greenest_window(duration_hours: int, within_hours: int = 48) -> dict:
     """Find the lowest-average-carbon contiguous window of `duration_hours`
       starting within the next `within_hours`. Use this to schedule a workload.
 
@@ -95,7 +95,7 @@ async def landing(request: Request) -> HTMLResponse:
   .tag{color:#5f5e5a;font-size:.9rem}
 </style></head>
 <body>
-  <h1>carbon-aware-mcp <span class="tag">v0.1.0</span></h1>
+  <h1>carbon-aware-mcp <span class="tag">v0.1.1</span></h1>
   <p>A remote <a href="https://modelcontextprotocol.io">MCP</a> server exposing live UK
   grid carbon-intensity tools, so an LLM agent can schedule workloads when the grid is
   cleanest.</p>
