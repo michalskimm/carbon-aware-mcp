@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-This is a portfolio project. The latest release (`v0.1.0`) is the only
+This is a portfolio project. The latest release (`v0.1.1`) is the only
 supported version.
 
 | Version | Supported          |
